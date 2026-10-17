@@ -1,0 +1,832 @@
+# ============================================================================
+# EXEMPLO DE CONFIGURAÇÃO DA EMPRESA · Super Skill do Líder 0.1
+# ============================================================================
+# Este arquivo é o "cérebro do negócio" em forma de dados. Todos os scripts e
+# skills do plugin leem daqui as pessoas, os clientes, as marcas, as metas, os
+# caminhos e os parâmetros, em vez de guardar esses valores no código.
+#
+# Os valores abaixo são FICTÍCIOS. Eles seguem o caso da Distribuidora Horizonte
+# do livro A Escola de Vendas (Luísa, Pedro, Sérgio, Fátima, Edinardo, Arthur e
+# Marlene) e servem para você rodar a máquina antes de trocar pelos seus dados.
+#
+# Como usar:
+#   1. copie este arquivo para ~/.super-skill-do-lider/empresa.yaml
+#   2. troque cada bloco [TENANT] pelos dados da sua operação
+#   3. mexa nos blocos [ENGINE] só se quiser mudar uma regra do método
+#   4. confira com:  python3 skills/painel-de-indicadores/scripts/configuracao.py
+#
+# CONVENÇÃO DE ESCOPO
+#   [TENANT] = dado da sua empresa (pessoas, clientes, marcas, metas, caminhos)
+#   [ENGINE] = regra do motor, vale para qualquer empresa que use o método
+# ============================================================================
+
+meta:                                                               # [TENANT]
+  versao_config: "0.1.0"
+  empresa: "Empresa Exemplo"          # nos textos, a máquina diz "a empresa"
+  unidade: "Unidade Casa e Limpeza"   # unidade de negócio que entra no recorte
+  regional: "Regional Exemplo"
+  moeda: "R$"
+  idioma: "pt-BR"
+  posicao_dados: "exemplo fictício"
+
+# ----------------------------------------------------------------------------
+# 1. CAMINHOS                                                        [TENANT]
+# ----------------------------------------------------------------------------
+# Marcadores entre chaves ({raiz}, {indicadores}...) são trocados pelo valor da
+# própria seção. Use caminhos da sua máquina; ~ vale a pasta pessoal.
+caminhos:
+  raiz: "~/Governanca"                                   # pasta-mãe do projeto
+  indicadores: "{raiz}/Indicadores"                      # bases, planilhas e painéis
+  comunicacao: "{indicadores}/Comunicacao"               # PDFs e HTML para o time
+  whatsapp: "{comunicacao}/WhatsApp"                     # kit de PDFs por pessoa
+  backups: "{indicadores}/Arquivo_Backups"               # cópia antes de cada carga
+  entrada: "~/Downloads"                                 # onde caem os exports do sistema
+  compartilhada: "{raiz}/Pasta_do_Time"                  # pasta na nuvem do time
+  clientes: "{raiz}/Clientes"                            # uma subpasta por cliente
+  scripts: "{raiz}/Scripts"                              # scripts adaptados por você
+  cerebro: "{raiz}/CLAUDE.md"                            # protocolo e glossário do negócio
+  historico_sentinela: "{raiz}/SENTINELA_BRIEFINGS.md"   # memória do vigia
+  log_entregas: "{raiz}/LOG_ENTREGAS.md"                 # registro datado do que foi entregue
+  exports_exemplo: "{indicadores}/Exports_Exemplo"       # [TENANT] onde gerar_dados_exemplo.py grava os exports fictícios
+
+# Nomes dos arquivos de trabalho (ficam em caminhos.indicadores)       [TENANT]
+arquivos:
+  base_realizado: "BASE_REALIZADO_ATUAL.xlsx"
+  base_carteira_aberta: "BASE_CARTEIRA_ABERTA_ATUAL.xlsx"
+  base_carteira_resumo: "BASE_CARTEIRA_RESUMO_ATUAL.xlsx"
+  historico_fechado: "FECHAMENTO_REALIZADO.xlsx"          # meses já consolidados
+  metas: "METAS.xlsx"                                     # meta por mês × executivo × cliente × marca
+  referencia_ano_anterior: "REFERENCIA_ANO_ANTERIOR.xlsx" # mesmo recorte, ano passado
+  painel_master: "PAINEL_GOVERNANCA.xlsx"                 # planilha mestre com fórmulas
+  dados_painel: "dados_painel.json"                       # contrato de dados do painel web
+  painel_html: "PAINEL_WEB.html"
+  pdf_resumo: "PAINEL_RESUMO_CELULAR.pdf"
+  pdf_abas_completas: "PAINEL_E_CARTEIRA_COMPLETO.pdf"
+  excel_time: "CONTROLE_DO_TIME.xlsx"                     # [TENANT] Excel espelho do painel (vai em caminhos.comunicacao)
+  png_abas_completas: "FOTO_PAINEL"                       # [TENANT] prefixo das fotos PNG de cada bloco das abas completas
+
+# ----------------------------------------------------------------------------
+# 2. ORGANIZAÇÃO E HIERARQUIA                                        [TENANT]
+# ----------------------------------------------------------------------------
+organizacao:
+  diretoria: "Diretoria Regional"     # a quem o gerente reporta (cargo, não nome)
+  gerente: "Pedro"                    # gerente regional, dono da máquina
+  saudacao: "Pedro"                   # aparece em "Olá, Pedro" no painel
+  executivos:
+    - { nome: "Luísa Andrade", canal: "Indireto" }   # executiva de contas da Distribuidora Horizonte
+    - { nome: "Executivo B",   canal: "Direto"   }
+    - { nome: "Executivo C",   canal: "Atacado"  }
+  canais: ["Direto", "Indireto", "Atacado"]
+  # [ENGINE] arbitragem: quando a atribuição executivo × cliente divergir entre
+  # fontes, a base de CARTEIRA RESUMO (oficial vigente) prevalece sobre a coluna
+  # Executivo do relatório financeiro.
+  fonte_oficial_carteira: "base_carteira_resumo"
+  escopo_unidade: "Casa e Limpeza"    # outras unidades ficam fora de tudo
+  # o sell out não cobre o canal Direto: executivo do Direto fora da base não é erro
+  sellout_cobre_canais: ["Indireto", "Atacado"]
+
+# ----------------------------------------------------------------------------
+# 3. CALENDÁRIO FISCAL                                               [TENANT]
+# ----------------------------------------------------------------------------
+calendario:
+  ano_corrente: 2026
+  trimestre_corrente: "T3"
+  periodos: { P07: "2026-07", P08: "2026-08", P09: "2026-09" }
+  dias_uteis: { "2026-07": 23, "2026-08": 21, "2026-09": 21 }
+  meses_fim_trimestre: [3, 6, 9, 12]   # último mês de cada trimestre fiscal (a régua do trimestre só vale nele)
+  # [ENGINE] o período de uma venda é o "mês de trânsito" (mês GIT) do export,
+  # que PREVALECE sobre a data da fatura: nota do fim do mês N pode ter GIT N+1.
+  regra_periodo: "mes_git_prevalece_sobre_data_fatura"
+
+# ----------------------------------------------------------------------------
+# 4. IDENTIDADE DE CLIENTES (a regra mais crítica do sistema)
+# ----------------------------------------------------------------------------
+clientes:
+  # [ENGINE] chave canônica: o CÓDIGO do cliente no sistema de gestão (ERP).
+  # Nunca usar o nome: a grafia muda entre exports e entre anos.
+  chave: "codigo_cliente"
+  coluna_codigo: "Plan to"            # [TENANT] nome da coluna do código no export
+  coluna_nome: "Plan to Name"
+
+  cadastro:                                                         # [TENANT]
+    - { codigo: "100101", nome: "DISTRIBUIDORA HORIZONTE LTDA",  executivo: "Luísa Andrade", canal: "Indireto" }
+    - { codigo: "100102", nome: "DISTRIBUIDORA HORIZONTE MS",    executivo: "Luísa Andrade", canal: "Indireto" }
+    - { codigo: "100103", nome: "DISTRIBUIDORA HORIZONTE PA",    executivo: "Luísa Andrade", canal: "Indireto" }
+    - { codigo: "100201", nome: "REDE EXEMPLO NORTE",            executivo: "Executivo B",   canal: "Direto" }
+    - { codigo: "100202", nome: "REDE EXEMPLO SUL",              executivo: "Executivo B",   canal: "Direto" }
+    - { codigo: "100203", nome: "REDE EXEMPLO SUL FILIAL",       executivo: "Executivo B",   canal: "Direto" }
+    - { codigo: "100301", nome: "ATACADO EXEMPLO CENTRAL",       executivo: "Executivo C",   canal: "Atacado" }
+    - { codigo: "100302", nome: "ATACADO EXEMPLO BRASIL",        executivo: "Executivo C",   canal: "Atacado" }
+
+  # [TENANT] migrações de código: mesmo relacionamento comercial, cadastro novo.
+  # [ENGINE] só aliasar com evidência: um código para de faturar exatamente
+  # quando o outro começa, com volume parecido, no histórico contínuo.
+  migracoes:
+    - { de: "100300", para: "100302", nome: "ATACADO EXEMPLO (cadastro antigo) → ATACADO EXEMPLO BRASIL",
+        vigencia: "2025-09", evidencia: "um para de faturar no mês em que o outro começa" }
+
+  # [TENANT] grupos econômicos: códigos que sempre se analisam somados
+  merges_grupo:
+    rede_exemplo_sul:
+      exibicao: "Rede Exemplo Sul"
+      codigos: ["100202", "100203"]
+      regra: "dois códigos para a mesma operação; usar só um dá MSL falso"
+
+  # [TENANT] nome de exibição por código (vale para TODOS os materiais)
+  exibicao:
+    "100101": "HORIZONTE DISTR. GO"
+    "100102": "HORIZONTE DISTR. MS"
+    "100103": "HORIZONTE DISTR. PA"
+    "100201": "REDE EXEMPLO NORTE"
+    "100202": "REDE EXEMPLO SUL"
+    "100203": "REDE EXEMPLO SUL"
+    "100301": "ATACADO EXEMPLO CENTRAL"
+    "100302": "ATACADO EXEMPLO BRASIL"
+
+  # [ENGINE] normalizações e investigações obrigatórias
+  prefixos_remover: ["L4 "]           # prefixo técnico que alguns relatórios põem no nome
+  investigar_troca_de_codigo: "cliente que zera enquanto outro nasce com volume parecido
+                               é suspeita de troca de código; verificar ANTES de reportar
+                               perda ou ganho de carteira"
+
+  # [TENANT] grupos com várias operações por UF (skill identidade-de-clientes).
+  # Cada grupo vira "caixas" de distribuição por UF contratada; o que fatura
+  # para UF fora das contratadas é ATACADO.
+  grupos_por_uf:
+    distribuidora_horizonte:
+      prefixo_exibicao: "HORIZONTE"
+      ufs_distribuicao: ["GO", "MS", "TO", "PA"]
+      caixas: ["HORIZONTE DISTR. GO", "HORIZONTE DISTR. MS", "HORIZONTE DISTR. TO",
+               "HORIZONTE DISTR. PA", "HORIZONTE ATACADO"]
+      caixa_atacado: "HORIZONTE ATACADO"
+      recorte_da_area: ["HORIZONTE DISTR. GO", "HORIZONTE DISTR. MS", "HORIZONTE DISTR. TO"]
+      # como reconhecer cada caixa em cada fonte (trecho do texto → caixa)
+      fontes:
+        sistema_do_distribuidor:          # coluna com o nome da filial
+          coluna: "filial"
+          regras:
+            - { contem: "GO - ", caixa: "HORIZONTE DISTR. GO" }
+            - { contem: "MS - ", caixa: "HORIZONTE DISTR. MS" }
+            - { contem: "TO - ", caixa: "HORIZONTE DISTR. TO" }
+            - { contem: "PA - ", caixa: "HORIZONTE DISTR. PA" }
+          resto: "HORIZONTE ATACADO"
+        relatorio_do_distribuidor:        # coluna DISTRIBUIDOR do relatório próprio do grupo
+          coluna: "DISTRIBUIDOR"
+          regras:
+            - { contem: "DB PA", caixa: "HORIZONTE DISTR. PA" }
+            - { contem: "DB TO", caixa: "HORIZONTE DISTR. TO" }
+            - { contem: "DB MS", caixa: "HORIZONTE DISTR. MS" }
+            - { contem: "GO",    caixa: "HORIZONTE DISTR. GO" }
+          resto: "HORIZONTE ATACADO"
+        base_oficial_da_empresa:          # coluna do código/nome do cliente no ERP
+          coluna: "Plan to Name"
+          regras:
+            - { contem: "HORIZONTE MS", caixa: "HORIZONTE DISTR. MS" }
+            - { contem: "HORIZONTE PA", caixa: "HORIZONTE DISTR. PA" }
+            - { contem: "HORIZONTE TO", caixa: "HORIZONTE DISTR. TO" }
+            - { contem: "HORIZONTE",    caixa: "HORIZONTE DISTR. GO" }
+          resto: "HORIZONTE ATACADO"
+
+  casos_especiais:                                                  # [TENANT]
+    cliente_final_do_distribuidor: "um cliente que compra DO distribuidor não se consolida
+                                    com ele (é comprador a jusante); provar pelo relatório
+                                    de sell out do próprio distribuidor"
+
+# ----------------------------------------------------------------------------
+# 5. TAXONOMIA DE PRODUTOS                                           [TENANT]
+# ----------------------------------------------------------------------------
+produtos:
+  marcas_foco: ["Marca X", "Marca Y", "Marca Z", "Marca W"]
+  descricao_marcas:
+    "Marca X": "um desinfetante e limpador multiuso"
+    "Marca Y": "um tira-manchas em pó e líquido"
+    "Marca Z": "um limpador de vaso sanitário"
+    "Marca W": "um detergente para lava-louças"
+  marcas_destaque_rv: ["Marca X", "Marca Y"]     # as marcas que o Gatilho da RV olha
+  cores_marcas: { "Marca X": "#0071E3", "Marca Y": "#FF007F" }   # só no nome da marca em tabelas
+  mix_padrao_regional: { "Marca X": 0.79, "Marca Y": 0.13, "Marca Z": 0.05, "Marca W": 0.03 }
+  lista_msl: { total_skus: 60, arquivo: "LISTA_MSL.xlsx", aba: "Base MSL" }
+  categoria_sem_marca_da_empresa: ["DESINFETANTE CLORADO"]   # categoria do mercado onde a empresa não tem marca
+
+  # taxonomia do ERP → taxonomia das METAS
+  segmap_erp_para_metas:
+    "MARCA X MULTIUSO": "MARCA X MULTIUSO"
+    "MARCA X PISO DILUIDO": "MARCA X PISO"
+    "MARCA X PISO CONCENTRADO": "MARCA X PISO"
+    "MARCA X BANHEIRO": "MARCA X BANHEIRO"
+    "MARCA Y LIQUIDO": "MARCA Y LIQUIDO"
+    "MARCA Y PO": "MARCA Y POS"
+    "MARCA Z GEL": "MARCA Z GEL"
+    "MARCA W TABLETES": "MARCA W TABS"
+  # taxonomia do ERP → taxonomia do relatório financeiro (P&L)
+  segmap_erp_para_pl:
+    "Marca Y Po": "Pos"
+    "Marca W Tabletes": "TABS"
+    "Marca X Piso Diluido": "Piso"
+    "Marca X Piso Concentrado": "Piso"
+  # [ENGINE] normalização de segmento: colapsar espaços duplos e tirar o prefixo
+  # da marca ("Marca Y Liquido" → "Liquido"). Segmento renomeado entre anos e sem
+  # mapa aparece como "s/ mapa"; só se mapeia com evidência.
+
+# ----------------------------------------------------------------------------
+# 6. DEFINIÇÕES DE MÉTRICAS                                          [ENGINE]
+# ----------------------------------------------------------------------------
+metricas:
+  sell_in: "faturamento da empresa para o cliente (caixas faturadas e valor líquido)"
+  sell_out: "venda do cliente para o ponto de venda ou para o shopper"
+  carteira:
+    definicao: "pedidos abertos com status em status_carteira"
+    caixas: "reais (coluna de caixas da carteira)"
+    valor: "ESTIMADO pelo preço médio por segmento (o export da carteira não traz valor);
+            sempre rotular como estimativa"
+  fechamento_projetado: "faturado + carteira estimada"
+  nr_meta: "receita líquida (NR) contra a meta oficial revisada (AR); é a métrica-base de
+            meta, gap e RV"
+  verbas_comerciais:                                                # [TENANT]
+    definicao: "soma das verbas de negociação com o cliente que o gerente controla"
+    proibido: "o gross-to-net inteiro (dominado por verbas que o gerente não decide)"
+  ytd: "sempre comparável (mesma janela de meses nos dois anos); mês parcial NUNCA entra"
+  delta: "toda comparação de acumulado mostra % E diferença absoluta"
+
+# ----------------------------------------------------------------------------
+# 7. MSL (lista de itens obrigatórios)                               [TENANT]
+# ----------------------------------------------------------------------------
+msl:
+  # [ENGINE] cada mês é a FOTO ACUMULADA do trimestre (90 dias). Nunca é média,
+  # nunca divide por 3. Um item vendido uma vez no trimestre já conta.
+  conceito: "foto_acumulada_do_trimestre"
+  medicao:
+    direto:   { fonte: "Sell In",  meta_pct: 80 }
+    indireto: { fonte: "Sell Out", meta_pct: 60 }
+  farol:
+    regra_escalada: "vermelho por 2 meses seguidos sobe para a diretoria"
+
+# ----------------------------------------------------------------------------
+# 8. REMUNERAÇÃO VARIÁVEL (RV)                          [TENANT · valores ilustrativos]
+# ----------------------------------------------------------------------------
+rv:
+  teto: "até 60% do salário por mês"
+  gatilho:
+    regra: "sem 100% do NR das marcas_destaque_rv no trimestre, a RV e o bônus de campanha
+            ZERAM, independente das outras métricas"
+  escalas:                       # % de atingimento : % de pagamento
+    nr_e_sellout:  { 85: 8, 90: 12, 100: 20, 105: 24, 110: 28 }
+    execucao_loja: { 80: 6, 90: 10, 100: 14 }
+  acelerador:
+    bonus_pct_salario: 20
+    condicao: "110% nas duas marcas_destaque_rv"
+  bonus_missoes:
+    valor_por_missao: 800
+    missoes: ["Marca X Banheiro", "Marca Z Gel"]
+    condicao: "condicionado ao Gatilho"
+  fontes:
+    metas: "planilha de RV, aba de metas por executivo"
+    controle_mensal: "uma aba de controle por período (replicar na virada do mês)"
+
+# ----------------------------------------------------------------------------
+# 9. QUALIDADE DE DADOS                                              [ENGINE]
+# ----------------------------------------------------------------------------
+qualidade:
+  outliers_preco:
+    limiar_valor_por_caixa: 300.0     # acima disto o R$/cx está fora de escala (mediana do exemplo ≈ R$ 100)
+    correcao: "reprecificar pela mediana de R$/cx do próprio SKU; contar e reportar quantas"
+    regra_sell_out: "> 3× a mediana do SKU (amostra >= 3) → reprecificar pela mediana"
+    bases_grandes: "IQR (Q3 + 1,5×IQR) do preço unitário por SKU com todas as linhas do arquivo
+                    como amostra; fora do limite → quantidade × mediana"
+  devolucoes: "linhas negativas MANTIDAS (número líquido)"
+  export_parcial:
+    deteccao: "total do mês corrente REGREDIU frente à carga anterior → o export foi cortado
+               por data de fatura e perdeu notas com mês GIT do mês"
+    prevencao: "exportar com data de fatura desde ~dia 15 do mês anterior"
+  export_parcial_acao: "alertar"      # [ENGINE] "alertar" (segue e avisa) ou "parar" (não grava nada)
+  mes_parcial: "nunca somar em acumulado"
+  linha_total_preagregada: "bases resumo trazem linha 'Total' junto das individuais: somar tudo DOBRA"
+  meses_em_texto: "nunca ordenar ou tirar máximo de 'AAAA/MMM' por extenso: mapear mês → número antes"
+  csv_painel_varejo: "UTF-16 separado por tabulação, milhar brasileiro: ler SEMPRE como texto e
+                      converter à mão (senão o pandas divide por 1000)"
+  unidades_incompativeis: "caixas de fontes diferentes podem não ser comparáveis: consolidar em R$"
+  excel_fragil: "intervalos nomeados e fórmulas têm TETO FIXO de linhas; toda carga que cresce a base
+                 exige conferir totais contra referência independente (zero erro de fórmula não é
+                 número certo)"
+
+# ----------------------------------------------------------------------------
+# 10. CONTRATOS DE ENTRADA (layouts dos exports do ERP)     [TENANT + ENGINE]
+# ----------------------------------------------------------------------------
+# [ENGINE] a classificação é PELO CONTEÚDO DO CABEÇALHO, nunca pela ordem ou
+# pela contagem de colunas (o layout varia uma coluna para mais ou para menos).
+contratos_entrada:
+  realizado:
+    aba: "Export"
+    assinatura: ["Qtd Caixa Faturada", "Mês GIT"]
+    colunas: { executivo: "Executivo", canal: "Canal", categoria: "Categoria", marca: "Marca",
+               segmento: "Segmento", codigo_cliente: "Plan to", nome_cliente: "Plan to Name",
+               uf: "UF", sku: "SKU", descricao: "Descrição", caixas: "Qtd Caixa Faturada",
+               valor: "Valor Net", mes_git: "Mês GIT", data_fatura: "Data da Fatura",
+               data_pedido: "Data do Pedido", status: "Status",
+               pedido: "Pedido", nota_fiscal: "NF" }                     # [TENANT] pedido e NF entram no controle de RV
+    # [ENGINE] linha só é pedido se estas colunas vierem preenchidas: o rodapé do export
+    # ("Total", "Filtros aplicados: ...") tem a primeira coluna cheia e o resto vazio
+    linha_valida_se_preenchida: ["executivo", "codigo_cliente"]
+  carteira_aberta:
+    aba: "Export"
+    assinatura: ["Qtd Caixas"]
+    assinatura_ausente: ["Qtd Caixa Faturada"]
+    status_carteira: ["Carteira", "Processo Alocação", "Carteira Futura"]
+    rotulos_curtos: { "Processo Alocação": "Alocação", "Carteira Futura": "Cart. futura" }   # [TENANT] rótulos do gráfico de composição
+    colunas: { executivo: "Executivo", canal: "Canal", categoria: "Categoria", marca: "Marca",
+               segmento: "Segmento", codigo_cliente: "Plan to", nome_cliente: "Plan to Name",
+               uf: "UF", sku: "SKU", caixas: "Qtd Caixas", status: "Status",
+               valor: "Valor Net", data_pedido: "Data do Pedido" }    # [TENANT] valor costuma vir vazio
+    linha_valida_se_preenchida: ["executivo", "codigo_cliente"]       # [ENGINE]
+    nota: "o valor vem vazio: R$ estimado pelo preço médio do segmento"
+  carteira_resumo:
+    assinatura_inicio: ["Regional", "Gerente", "Executivo"]
+    colunas: ["Regional", "Gerente", "Executivo", "Plan to", "Target", "Devoluções",
+              "Realizado / GIT IN", "% Realizado x AR", "Carteira Atual", "Processo Alocação",
+              "Carteira Futura", "Realizado + Carteira", "% Realizado + Carteira x AR"]
+    coluna_executivo: "Executivo"        # [TENANT]
+    coluna_codigo: "Plan to"             # [TENANT] o código é achado dentro do texto (pipeline.codigo_cliente.regex_no_rotulo)
+    ignorar_executivo: ["", "Total"]     # [ENGINE] linha Total pré-agregada: somar tudo DOBRA a conta
+  # [TENANT] meses fechados: mesmo layout do export de realizado
+  historico_fechado:
+    aba: "Export"
+    usa_colunas_de: "realizado"
+  # [TENANT] mesmo recorte no ano anterior (alimenta YTD, top quedas × crescimentos e histórico)
+  referencia_ano_anterior:
+    aba: "Export"
+    usa_colunas_de: "realizado"
+    status_validos: []                   # vazio = todas as linhas; ex.: ["Faturado"]
+  # [TENANT] meta oficial por mês × executivo × cliente × marca × segmento
+  metas:
+    aba: "METAS"
+    colunas: { periodo: "Período", executivo: "Executivo", canal: "Canal", codigo_cliente: "Plan to",
+               nome_cliente: "Cliente", marca: "Marca", segmento: "Segmento",
+               caixas: "Meta Caixas", valor: "Meta Valor" }
+    # [ENGINE] Período aceita o código do calendário (P07) ou AAAA-MM; o segmento da meta
+    # é lido como MARCA + SEGMENTO e casado com produtos.segmap_erp_para_metas
+  # [TENANT] metas das missões de RV por executivo (uma coluna por missão de painel.rv.missoes)
+  metas_rv:
+    arquivo: "metas"                     # chave da seção arquivos
+    aba: "RV"
+    colunas: { periodo: "Período", executivo: "Executivo" }
+
+# ----------------------------------------------------------------------------
+# 11. PARÂMETROS DO PIPELINE                                         [ENGINE]
+# ----------------------------------------------------------------------------
+pipeline:
+  corte_historico: "2026-07"   # meses anteriores vêm do fechamento; a partir dele, da base rolante.
+                               # AVANÇAR a cada fechamento de mês
+  # [ENGINE] mês de referência do painel: "auto" = mês do calendário se tiver meta; senão o
+  # mês seguinte ao último faturado se tiver meta; senão o último faturado. Ou fixe "AAAA-MM".
+  mes_referencia: "auto"
+  # [ENGINE] chave canônica do cliente: o código, normalizado do mesmo jeito em todas as fontes
+  codigo_cliente:
+    remover_zeros_a_esquerda: true     # 0000100101 e 100101 são o mesmo cliente
+    regex_no_rotulo: "(\\d{6,10})"     # acha o código dentro de rótulos como "▸ NOME (100101)"
+  exibicao:
+    min_base_valor: 1000       # abaixo disso o % não aparece nem disputa destaque
+    max_pct_exibido: 1500      # teto de % na tela; a CLASSIFICAÇÃO usa o valor sem teto
+    pct_mensal_grafico: "só exibir % se a base do mês >= 3% da escala e |%| <= 500"
+    rotulo_sinal: "valor negativo nunca é 'crescimento': se o melhor candidato é negativo,
+                   o rótulo vira 'menor queda'"
+    base_zero: "sem volume no ano anterior e |NR| abaixo de min_base_valor → 'Novo / base atípica',
+                nunca 'Estável'"
+  virada_de_mes_checklist:
+    - "mesclar o fechamento novo no histórico e avançar corte_historico"
+    - "criar a aba de controle do novo período na planilha de RV"
+    - "planilha mestre: só com base MENSAL COMPLETA e pedido explícito"
+    - "atualizar o book do período com acumulado e plano"
+
+# ----------------------------------------------------------------------------
+# 12. FONTES OFICIAIS POR INDICADOR                                  [TENANT]
+# ----------------------------------------------------------------------------
+fontes_oficiais:
+  sellin_meta_real_gap: "planilha mestre, aba PAINEL"
+  pnl: "relatório financeiro fechado (Actual) do mês"
+  meta_mensal: "arquivo de metas oficial (AR) da regional"
+  referencia_ano_anterior:
+    nivel_cliente: "planilha mestre, aba do ano anterior"
+    nivel_marca: "relatório financeiro reapresentado (restated) do ano anterior"
+  sellout_agregado: "uma planilha única com caixas, R$ e positivação, para manter os três coerentes"
+  defasagens: { sell_in: "D-1", pnl: "mês fechado", sell_out: "M-1 a M-2",
+                positivacao: "M-2 a M-3 (só dado fechado)" }
+
+# ----------------------------------------------------------------------------
+# 13. PROJEÇÃO E CENÁRIOS (skill projecao-e-cenarios)
+# ----------------------------------------------------------------------------
+projecao:
+  # [ENGINE] o motor por cliente
+  peso_ritmo_curto: 0.5            # BASE = 50% ritmo curto + 50% ritmo longo
+  mes_feito_se_atingiu: 0.90       # mês em curso >= 90% do anterior → "mês feito", sem extrapolar
+  sazonalidade_min: 0.6            # sazonalidade limitada entre 0,6 e 1,4
+  sazonalidade_max: 1.4
+  fator_queda: 0.90
+  fator_crescimento: 1.075
+  ambicao_ytd: 0.075               # crescimento: o necessário para o acumulado fechar +7,5%
+  teto_crescimento: 1.5            # teto do crescimento: 1,5× a base ou a meta
+  piso_carteira: 0.60              # projeção nunca abaixo de 60% da carteira aberta
+  teto_puxada_meta: 1.3            # puxar até o gap da régua da meta, com teto 1,3×
+  regua_meta: 0.85                 # [TENANT] régua de verba comercial = 85% da meta
+  dia_subida: "sexta-feira da 2ª semana"   # data de subida padrão, dentro de todos os limites de pedido
+  base_minima_sazonalidade: 300    # abaixo disto (caixas/mês no ano anterior) a sazonalidade vale 1,0
+  carteira_relevante: 500          # carteira acima disto e de metade da projeção ganha observação
+  micro_conta: 200                 # contas pequenas mantêm o ritmo baixo, arredondado
+  # [TENANT] contas cuja verba depende da régua do trimestre: código → meta do trimestre (caixas)
+  contas_regua_trimestre:
+    "100101": 120000
+    "100102": 27000
+  # [TENANT] o arquivo oficial de melhor estimativa (BE) que a empresa manda
+  arquivo_be:
+    padrao_nome: "BE_P0X_REGIONAL*.xlsx"
+    aba: "Unidade"
+    filtro_coluna: "Sales_Manager"           # filtrar as linhas do gerente
+    linha_inicial: 5                         # primeira linha de cliente
+    colunas:                                 # letra da coluna no arquivo oficial
+      nome: "B"
+      codigo: "C"
+      descricao: "E"
+      gerente: "I"
+      executivo: "J"
+      meta: "K"
+      carteira: "L"
+      em_transito: "M"
+      data_limite_pedido: "N"
+      data_subida: "O"                        # o gerente preenche
+      marcas: ["P", "Q", "R", "S"]            # previsão de subida em caixas por marca, na ordem de produtos.marcas_foco
+      soma: "T"
+      valida_data: "U"
+      ajuste_colaborativo: "V"                # = desconto da empresa sobre (carteira + subidas)
+      be_final: "W"
+      be_x_meta: "X"
+    ajuste_colaborativo_pct: -0.10           # o que se escreve vira BE final × 0,9
+    sufixo_saida: "_Projecao"
+  voz_resumo: { comando: "say", voz: "Felipe (Enhanced)", velocidade: 185 }   # resumo falado no macOS
+
+# ----------------------------------------------------------------------------
+# 14. SENTINELA (skill sentinela)                                    [ENGINE]
+# ----------------------------------------------------------------------------
+sentinela:
+  faixas_padrao:                   # variação contra o período anterior
+    na_faixa: "> +5%"
+    atencao: "entre -1% e +5%"
+    fora_da_faixa: "< -1%"
+  indicadores: ["Sell In", "Sell Out", "Positivação", "MSL", "RV/Gatilho", "P&L"]
+  comparar_historico_a_partir_do: 3   # do 3º briefing em diante a comparação é obrigatória
+
+# ----------------------------------------------------------------------------
+# 15. SAÍDAS E DISTRIBUIÇÃO                                          [TENANT]
+# ----------------------------------------------------------------------------
+saidas:
+  identidade_visual:
+    fundo: "#F5F5F7"
+    card: "#FFFFFF"
+    grafite: "#1D1D1F"
+    cinza_texto: "#6E6E73"
+    etiqueta: "#B64400"
+    destaque: "#FF007F"            # a cor da marca da empresa, só no mandatório
+    verde: "#248A3D"
+    amarelo: "#B88400"
+    vermelho: "#D70015"
+    fonte_web: "Inter"             # fonte de uso livre (SIL Open Font License)
+    fonte_office: "Arial"
+    farol: "verde >= 100% · âmbar >= 90% · vermelho abaixo"
+    apoio: "#86868B"               # [TENANT] texto de apoio fraco
+    linha: "#D2D2D7"               # [TENANT] linha sob cabeçalho, trilho, período anterior em barras
+    linha_registro: "#ECECEF"      # [TENANT] linhas entre registros e trilho das barras
+    periodo_anterior: "#86868B"    # [TENANT] curva do ano anterior no histórico
+    raio_card: 18                  # [ENGINE] cards brancos, raio 18px, sem sombra e sem borda
+    fonte_fallback: "'Helvetica Neue', Arial, sans-serif"   # [ENGINE]
+    carregar_fonte_web: true       # [TENANT] true = o HTML busca a Inter na web (Google Fonts); sem rede, cai no fallback
+    linha_tabela: "#ECECEF"        # [TENANT] linhas entre registros nas tabelas dos decks
+    link: "#0066CC"                # [TENANT] participantes na capa
+    barra_anterior: "#D2D2D7"      # [TENANT] barra do período anterior nos gráficos
+    barra_referencia: "#6E6E73"    # [TENANT] meta ou referência nos gráficos de colunas
+  pptx_executivo:                  # [TENANT] paleta dos modelos PowerPoint (book-executivo e apresentacao-executiva)
+    acento: "#FF007F"              # se faltar, usa identidade_visual.destaque
+    slate: "#415A6C"
+    slate_medio: "#64748B"
+    slate_claro: "#94A3B8"
+    fundo_conteudo: "#F8FAFC"
+    zebra: "#F1F5F9"
+    borda: "#E2E8F0"
+    positivo: "#50B428"
+    negativo: "#C0392B"
+    fonte: "Arial"                 # se faltar, usa identidade_visual.fonte_office
+  artefatos_link_fixo: {}          # nome do painel: link fixo do artefato (republicar sempre no mesmo link)
+  distribuicao:
+    preferida: "PDFs por pessoa no celular (1 do gerente + 1 por executivo)"
+    formato_pdf: "retrato, coluna única, tipos grandes, barras fatiadas em blocos de 15 linhas"
+    linguagem: "português de negócio, sem jargão de IA nem inglês de consultoria
+                (perda de base, reativação; nunca churn ou win-back)"
+    formatacao: "padrão brasileiro (vírgula decimal, ponto de milhar)"
+  mensageiro:                      # usado só pela rotina-atualizar-paineis e rotina-foto-do-painel
+    ativo: false
+    canal: "Slack"                 # ou outro conector disponível
+    destino: "mensagem direta para o próprio gerente"
+
+# ----------------------------------------------------------------------------
+# 16. VALIDAÇÕES OBRIGATÓRIAS (portões do pipeline)                  [ENGINE]
+# ----------------------------------------------------------------------------
+validacoes:
+  no_pipeline_com_assert:          # falham e PARAM o gerador
+    - "agregado == bruto por ano"
+    - "conciliação quadro × quadro (marca, segmento, cliente, executivo, canal)"
+  pos_carga:
+    - "NR realizado do controle de RV == NR do período na base de realizado"
+    - "TOTAL da carteira na planilha mestre ≈ total da base resumo (diferença = clientes sem linha)"
+    - "total GIT do mês corrente >= carga anterior (senão: export parcial)"
+    - "recalcular a cópia no LibreOffice e exigir 0 erro de fórmula (necessário, NÃO suficiente)"
+    - "soma por executivo == soma dos clientes antes de entregar"
+  qa_entregaveis:
+    - "renderizar TODAS as páginas em imagem e revisar (não amostra)"
+    - "pptx com imagem nova: validar o content_type com python-pptx (o LibreOffice tolera o que o PowerPoint quebra)"
+  tolerancia_conciliacao: 1.0        # [ENGINE] diferença máxima (cx ou R$) aceita nos asserts do gerador
+  tolerancia_referencia_pct: 1.0     # [ENGINE] nível marca × nível cliente da referência do ano anterior (%)
+  # [TENANT] conferências que atualizar_bases.py --recalcular faz numa CÓPIA recalculada.
+  # "nome" é um intervalo nomeado da planilha (ou "ABA!C10"); "esperado" diz de onde vem
+  # o número que a célula tem de bater.
+  conferencias_automaticas:
+    - { rotulo: "NR do controle de RV (P07) = NR de P07 na base de realizado", arquivo: "painel_master",
+        nome: "RV_NR_P07", esperado: { fonte: "realizado", medida: "valor", periodo: "P07" } }
+    - { rotulo: "NR do controle de RV (P08) = NR de P08 na base de realizado", arquivo: "painel_master",
+        nome: "RV_NR_P08", esperado: { fonte: "realizado", medida: "valor", periodo: "P08" } }
+    - { rotulo: "NR do controle de RV (P09) = NR de P09 na base de realizado", arquivo: "painel_master",
+        nome: "RV_NR_P09", esperado: { fonte: "realizado", medida: "valor", periodo: "P09" } }
+    - { rotulo: "TOTAL da carteira na mestre ≈ total da carteira resumo", arquivo: "painel_master",
+        nome: "TOTAL_CARTEIRA_MESTRE", esperado: { fonte: "carteira_resumo", coluna: "Realizado + Carteira" },
+        diferenca_explicada_por_clientes_sem_linha: true }
+
+# ----------------------------------------------------------------------------
+# 17. AMBIENTE DE EXECUÇÃO                                           [ENGINE]
+# ----------------------------------------------------------------------------
+ambiente:
+  python_minimo: "3.9"             # o código evita sintaxe 3.10+
+  dependencias: ["pandas", "openpyxl", "pyyaml", "python-pptx", "PyMuPDF", "Pillow", "matplotlib"]
+  binarios:
+    libreoffice: "/Applications/LibreOffice.app/Contents/MacOS/soffice"     # recálculo das planilhas
+    chrome: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"  # PDF dos painéis (headless)
+    # [TENANT] onde mais procurar, na ordem, se o caminho acima não existir
+    libreoffice_alternativos: ["/usr/bin/soffice", "/usr/local/bin/soffice",
+                               "C:/Program Files/LibreOffice/program/soffice.exe"]
+    chrome_alternativos: ["/Applications/Utilities/Google Chrome.app/Contents/MacOS/Google Chrome",
+                          "/Applications/Chromium.app/Contents/MacOS/Chromium",
+                          "/usr/bin/google-chrome", "/usr/bin/chromium",
+                          "C:/Program Files/Google/Chrome/Application/chrome.exe"]
+    # [ENGINE] último recurso: nomes de comando procurados no PATH
+    libreoffice_comandos: ["soffice", "libreoffice"]
+    chrome_comandos: ["google-chrome", "chromium", "chromium-browser", "chrome"]
+  limite_segundos: { libreoffice: 180, chrome: 120 }   # [ENGINE] tempo máximo de cada chamada
+
+# ----------------------------------------------------------------------------
+# 18. PAINEL WEB E SAÍDAS DO MOTOR (skill painel-de-indicadores)     [TENANT]
+# ----------------------------------------------------------------------------
+# Tudo o que aparece escrito no painel, nos PDFs e no Excel do time vem daqui ou
+# do dado. O template HTML não guarda nome, cliente, marca nem sigla.
+painel:
+  indicador: "Sell In"
+  titulo: "Acompanhamento de {indicador} · fechamento projetado: faturado + carteira versus meta"
+  subtitulo: "{regional} · {unidade}"          # marcadores: chaves da seção meta
+  rotulo_total: "Total da regional"            # título do cartão de KPI
+  rotulo_meta: "meta oficial"                  # aparece como "P08 (meta oficial)"
+  copiar_html_para_comunicacao: true           # mantém uma cópia do HTML na pasta de comunicação
+  link_fixo: "painel"                          # chave de saidas.artefatos_link_fixo (republicar no mesmo link)
+  # [ENGINE] nome longo corta no celular e esconde a UF: abrevia para "<rotulo> <UF dominante>".
+  # Só vale para cliente SEM nome em clientes.exibicao. Ex.:
+  #   - { comeca_com: "DISTRIBUIDORA HORIZONTE", rotulo: "HORIZONTE DISTR." }
+  abreviar_por_uf: []
+  farol: { verde: 1.0, amarelo: 0.9 }          # [ENGINE] verde >= 100%, âmbar >= 90%, vermelho abaixo
+  # Missões de RV por executivo (metas em contratos_entrada.metas_rv, uma coluna por missão).
+  # marcas/segmentos vazios = todo o faturado do executivo. {premio} vira rv.bonus_missoes.valor_por_missao.
+  rv:
+    ativo: true
+    titulo: "Indicadores de RV: missões do mês"
+    mes: "auto"                                # [ENGINE] auto = mês de referência do painel; ou "AAAA-MM" fixo
+    missoes:
+      - { id: "gatilho", coluna: "Gatilho NR", unidade: "val", marcas: "@produtos.marcas_destaque_rv",
+          titulo: "Missão 1 · Gatilho: 100% do NR das marcas de destaque (R$), condição para o bônus" }
+      - { id: "nr_total", coluna: "NR Total", unidade: "val", titulo: "Missão 2 · NR total (R$)" }
+      - { id: "acelerador", coluna: "Base Acelerador", unidade: "val", marcas: "@produtos.marcas_destaque_rv",
+          titulo: "Marcas de destaque: NR (R$), base do acelerador" }
+      - { id: "missao_banheiro", coluna: "Missao Marca X Banheiro", unidade: "val", segmentos: ["Marca X Banheiro"],
+          titulo: "Missão 3 · Marca X Banheiro (R$), prêmio de {premio}" }
+      - { id: "missao_gel", coluna: "Missao Marca Z Gel", unidade: "val", segmentos: ["Marca Z Gel"],
+          titulo: "Missão 4 · Marca Z Gel (R$), prêmio de {premio}" }
+      - { id: "volume", coluna: "Volume Caixas", unidade: "cx", titulo: "Missão 5 · Volume (caixas)" }
+  # Kit de PDFs por pessoa (1 do gerente + 1 por executivo), Chrome headless no modo celular
+  pdf_por_pessoa:
+    prefixo: "Painel"
+    indicador: "cx"                            # preset do hash: cx ou val
+    janela: [900, 1400]                        # [ENGINE] retrato
+    tempo_virtual_ms: 8000                     # [ENGINE] tempo para o JavaScript desenhar antes de imprimir
+    tamanho_minimo_kb: 10                      # [ENGINE] PDF menor que isto é falha
+  # PDF sob demanda de uma visão filtrada (exportar_pdf_visao.py)
+  visao_pdf:
+    prefixo: "Visao"
+    janela: [1400, 900]                        # [ENGINE] paisagem
+  excel_time:
+    recalcular_ao_gerar: true                  # [ENGINE] recalcula uma cópia e exige 0 erro de fórmula
+  # Cartão vertical para celular com os KPIs gerais da planilha mestre recalculada.
+  # "celula" é um intervalo nomeado da mestre ou "ABA!B6". Formatos: cx, rs, pct, var_cx, var_pct.
+  pdf_resumo:
+    titulo: "PAINEL {indicador}"
+    pagina: [540, 960]                         # [ENGINE] pontos, proporção de tela de celular
+    blocos:
+      - [ { rotulo: "META DO MÊS (cx)", celula: "KPI_META_CX", formato: "cx" },
+          { rotulo: "REALIZADO DO MÊS (cx)", celula: "KPI_REAL_CX", formato: "cx" } ]
+      - [ { rotulo: "% ATINGIMENTO DO MÊS", celula: "KPI_ATING", formato: "pct", farol: true } ]
+      - [ { rotulo: "CARTEIRA ABERTA (cx)", celula: "KPI_CART_CX", formato: "cx" },
+          { rotulo: "REALIZADO + CARTEIRA (cx)", celula: "KPI_REAL_CART_CX", formato: "cx" } ]
+      - [ { rotulo: "% REALIZADO + CARTEIRA × META", celula: "KPI_ATING_PROJ", formato: "pct", farol: true } ]
+      - { secao: "COMPARATIVO YTD {ano_corrente} × {ano_anterior} (até o mês anterior)" }
+      - [ { rotulo: "YTD {ano_anterior} (cx)", celula: "KPI_YTD_ANT", formato: "cx" },
+          { rotulo: "YTD {ano_corrente} (cx)", celula: "KPI_YTD_CORR", formato: "cx" } ]
+      - [ { rotulo: "VARIAÇÃO ABSOLUTA (cx)", celula: "KPI_YTD_DIF", formato: "var_cx", sinal: true },
+          { rotulo: "VARIAÇÃO % YTD", celula: "KPI_YTD_PCT", formato: "var_pct", sinal: true } ]
+    tabelas:                                   # páginas seguintes, em paisagem
+      - titulo: "Carteira do dia por cliente (caixas)"
+        aba: "CARTEIRA"
+        linha_inicial: 6
+        coluna_rotulo: "B"
+        colunas:
+          - { titulo: "Target", coluna: "C", formato: "cx" }
+          - { titulo: "Devol.", coluna: "D", formato: "cx" }
+          - { titulo: "Realizado", coluna: "E", formato: "cx" }
+          - { titulo: "% Real", coluna: "F", formato: "pct", farol: true }
+          - { titulo: "Carteira", coluna: "G", formato: "cx" }
+          - { titulo: "Alocação", coluna: "H", formato: "cx" }
+          - { titulo: "Futura", coluna: "I", formato: "cx" }
+          - { titulo: "Real+Cart", coluna: "J", formato: "cx" }
+          - { titulo: "% Real+Cart", coluna: "K", formato: "pct", farol: true }
+  # PDF das abas completas da mestre (sempre numa cópia recalculada; o original não muda)
+  pdf_abas_completas:
+    blocos:
+      - { aba: "PAINEL", area: "auto" }        # "auto" = área usada da aba; ou "A1:K40"
+      - { aba: "CARTEIRA", area: "auto" }
+    paisagem: true
+    uma_pagina_por_bloco: true                 # [ENGINE] ajusta cada bloco a uma página
+    usar_ultima_pagina: true                   # [ENGINE] o LibreOffice às vezes "derrama" páginas de transbordo antes
+                                               # da tabela completa, que fica na ÚLTIMA página de cada bloco
+    gerar_png: true                            # foto de cada bloco (arquivos.png_abas_completas)
+    dpi_png: 150
+
+# ----------------------------------------------------------------------------
+# 19. PLANILHAS ALVO DA CARGA (atualizar_bases.py)                   [TENANT]
+# ----------------------------------------------------------------------------
+# Para onde cada export classificado é copiado. Tipos [ENGINE]:
+#   bloco           copia as linhas casando pelo NOME da coluna (cabeçalho da aba alvo);
+#                   colunas com fórmula nunca são sobrescritas e são estendidas até a última linha
+#   selecao_periodo grava só as linhas dos períodos do calendário (mês GIT prevalece), com os
+#                   campos pedidos (periodo = código do calendário; data_carga = hoje)
+#   por_codigo      casa cada linha da aba alvo pelo CÓDIGO achado no rótulo e escreve só
+#                   células de valor; fórmulas de subtotal ficam intactas e cliente sem linha é avisado
+planilhas_alvo:
+  - nome: "base de realizado da planilha mestre"
+    fonte: "realizado"
+    arquivo: "painel_master"          # chave da seção arquivos
+    aba: "BASE_REALIZADO"
+    tipo: "bloco"
+    linha_cabecalho: 1
+    linha_inicial: 2
+    preservar_marcadas: null          # ex.: { coluna: "R", valor: "FECHADO OFICIAL" } mantém no topo os meses fechados
+  - nome: "base de carteira da planilha mestre"
+    fonte: "carteira_aberta"
+    arquivo: "painel_master"
+    aba: "BASE_CARTEIRA"
+    tipo: "bloco"
+    linha_cabecalho: 1
+    linha_inicial: 2
+  - nome: "realizado do trimestre para o controle de RV"
+    fonte: "realizado"
+    arquivo: "painel_master"
+    aba: "RV_REALIZADO"
+    tipo: "selecao_periodo"
+    linha_inicial: 6
+    coluna_inicial: "B"
+    campos: ["data_pedido", "periodo", "executivo", "marca", "segmento", "valor", "caixas", "pedido", "data_carga"]
+  - nome: "carteira resumo na aba de carteira da planilha mestre"
+    fonte: "carteira_resumo"
+    arquivo: "painel_master"
+    aba_comeca_com: "CARTEIRA"
+    tipo: "por_codigo"
+    coluna_rotulo: "B"
+    linha_inicial: 6
+    colunas: { "Target": "C", "Devoluções": "D", "Realizado / GIT IN": "E", "% Realizado x AR": "F",
+               "Carteira Atual": "G", "Processo Alocação": "H", "Carteira Futura": "I",
+               "Realizado + Carteira": "J", "% Realizado + Carteira x AR": "K" }
+
+# ----------------------------------------------------------------------------
+# 20. DADOS DE EXEMPLO (gerar_dados_exemplo.py)            [TENANT · fictício]
+# ----------------------------------------------------------------------------
+# Parâmetros do caso fictício que o leitor roda na primeira vez. Não use com
+# dado real: o gerador se recusa a sobrescrever arquivo existente sem --sobrescrever.
+exemplo_dados:
+  semente: 7                                   # mesma semente = mesmos números
+  data_export: "2026-09-18"                    # último dia de fatura do export do mês corrente (mês parcial)
+  inicio_export_rolante: "2026-06-15"          # o export rolante começa no meio do mês anterior ao corte
+  uf_por_cliente: { "100101": "GO", "100102": "MS", "100103": "PA", "100201": "DF",
+                    "100202": "GO", "100203": "GO", "100301": "GO", "100302": "MT", "100300": "MT" }
+  categorias: { "Marca X": "Limpeza Geral", "Marca Y": "Lavanderia", "Marca Z": "Banheiro", "Marca W": "Cozinha" }
+  preco_caixa: { "Marca X": 92.0, "Marca Y": 128.0, "Marca Z": 85.0, "Marca W": 140.0 }   # R$/cx médio
+  caixas_mes_por_cliente: { "100101": 3200, "100102": 1500, "100103": 900, "100201": 2600,
+                            "100202": 1400, "100203": 500, "100301": 2100, "100302": 1700 }
+  crescimento_vs_ano_anterior: { "100101": 0.06, "100102": -0.12, "100201": -0.08, "100202": 0.10,
+                                 "100203": 0.0, "100301": -0.18, "100302": 0.04 }
+  clientes_novos_no_ano: ["100103"]            # sem compra no ano anterior (aparece como "novo")
+  cliente_sem_meta: "100103"                   # aparece com "s/ meta" no painel
+  cliente_sem_linha_na_mestre: "100203"        # a carga avisa "sem linha na planilha mestre"
+  fator_meta: 1.08                             # meta = volume esperado × fator
+  linhas_fora_de_escala: 12                    # linhas com R$/cx acima do limiar, plantadas no fechamento
+  prefixo_nomes_referencia: "L4 "              # testa clientes.prefixos_remover
+  nome_codigo_migrado: "ATACADO EXEMPLO (cadastro antigo)"
+  sazonalidade: [0.85, 0.90, 1.00, 0.95, 1.00, 1.05, 1.00, 1.05, 1.10, 1.05, 1.00, 1.15]
+
+# ----------------------------------------------------------------------------
+# 21. DIAGNÓSTICO DE REDE (skill diagnostico-de-rede)
+# ----------------------------------------------------------------------------
+diagnostico_rede:
+  # [TENANT] rótulo curto da empresa nos cabeçalhos do Excel ("Empresa jan-ago 26").
+  # Sem esta chave, vale meta.empresa.
+  rotulo_empresa: "Empresa"
+
+  # [TENANT] marcas parecidas com as da empresa (ou que já foram dela) mas que NÃO
+  # entram no recorte: contam como mercado. A empresa é só produtos.marcas_foco.
+  marcas_fora_da_empresa: ["Marca V"]
+
+  # [TENANT] categorias de outra unidade de negócio que vêm junto no export e saem
+  # de todas as tabelas de categoria
+  categorias_fora_da_unidade: ["Cuidados Pessoais"]
+
+  # [ENGINE] como o portal agrega a concorrência quando a rede não libera as marcas
+  # concorrentes em detalhe (sem marca concorrente aberta, a aba CONCORRÊNCIA não sai)
+  rotulos_concorrencia_agregada: ["OUTRA MARCA", "OUTROS PRODUTOS"]
+
+  # [TENANT] nome das métricas no export de KPIs por SKU do painel de varejo
+  metricas_export:
+    valor: "Vendas em valor R$"
+    quantidade: "Quantidade de venda"
+    lojas: "Qtd Lojas"
+
+  # [TENANT] layout do export de abertura por loja: colunas de dimensão antes das
+  # semanas e posição de cada métrica dentro do bloco de cada semana (0 = 1ª coluna)
+  abertura_lojas:
+    colunas_dimensao: 7          # loja, endereço, categoria, fabricante, marca, EAN, SKU
+    metricas_por_semana: 5       # preço médio, valor, kg, quantidade, % participação
+    posicao_valor: 1
+    posicao_quantidade: 3
+
+  # [TENANT] trecho do nome ou do endereço da loja → UF, para quando nem o nome nem o
+  # endereço terminam com a sigla do estado. Ex.: { "CIDADE NORTE": "TO" }.
+  # A prioridade é: uf_map.json da rede > sigla no fim do nome/endereço > este mapa.
+  uf_por_trecho: {}
+
+  # [TENANT] categoria em perda de share → frente e ação que entram no PLANO DE AÇÃO.
+  # Categoria fora deste mapa recebe a ação genérica (sortimento, preço, execução).
+  acoes_por_categoria:
+    "Limpador Multiuso":
+      frente: "Multiuso"
+      acao: "Marca X Multiuso: defender o preço de entrada do 500 ml e do 750 ml, ponto extra e sortimento por loja"
+    "Limpador Perfumado":
+      frente: "Perfumado"
+      acao: "Marca X Perfumado: revisar sortimento de fragrâncias e preço por loja"
+    "Desengordurante":
+      frente: "Desengordurante"
+      acao: "Marca X Cozinha: reposicionar preço e embalagem (refil e squeeze) onde o mercado da rede cresce e a empresa cai"
+    "Alvejantes":
+      frente: "Marca Y"
+      acao: "Recuperar Marca Y: revisar sortimento de pó e gel por loja, preço de prateleira e ponto extra na área de lavanderia"
+    "Limpador Sanitário":
+      frente: "Marca Z"
+      acao: "Marca Z: revisar sortimento e preço por loja e ponto extra no corredor de banheiro"
+    "Desodorizador Sanitário":
+      frente: "Marca Z"
+      acao: "Marca Z: revisar sortimento e preço por loja e ponto extra no corredor de banheiro"
+    "Detergente Lava Louça em Po":
+      frente: "Marca W"
+      acao: "Marca W pó: garantir presença em todas as lojas e destravar tabletes e abrilhantador onde a categoria cresce"
+    "Detergente Lava Louça Tabletes":
+      frente: "Marca W"
+      acao: "Marca W tabletes: presença e preço de prateleira nas lojas onde a categoria cresce"
+
+  # [ENGINE] limiares do método (padrão em LIMIARES_PADRAO do montar_diagnostico.py).
+  # Só preencha para mudar a regra; ex.: { loja_movimento: 0.08 }.
+  limiares: {}
+
+  # [ENGINE] subpasta, dentro da pasta do cliente (caminhos.clientes/<cliente>), onde
+  # ficam os dados brutos do período (CSVs, uf_map.json e cubos)
+  subpasta_dados: "_dados_painel_varejo_{periodo}"
+
+# ----------------------------------------------------------------------------
+# 22. PLANO DE NEGÓCIOS COM O CLIENTE (skill plano-de-negocios-com-cliente)
+# ----------------------------------------------------------------------------
+plano_de_negocios:
+  # [TENANT] onde o deck é entregue: dentro da pasta compartilhada do time e dentro
+  # da pasta do cliente
+  subpasta_compartilhada: "05. Planos de Negocio - Clientes Estrategicos"   # em caminhos.compartilhada
+  subpasta_cliente: "Plano_de_Negocios"                                      # em caminhos.clientes/<cliente>
+  # [TENANT] cor do chip do cliente quando o roteiro não traz a cor da marca dele
+  cor_cliente_padrao: "#2E6E8E"
+  # [ENGINE] texto fixo do rodapé (o nome do cliente e da empresa entram depois)
+  rotulo_rodape: "Diagnóstico Executivo Sell Out"
+  # [ENGINE] linha de grade dos gráficos e borda dos cards quando o padrao-visual não define
+  cor_grade: "#EDF1F5"
+  cor_linha: "#E5E5EA"

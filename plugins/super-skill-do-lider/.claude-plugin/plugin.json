@@ -1,0 +1,9 @@
+{
+  "name": "super-skill-do-lider",
+  "version": "0.1.0",
+  "description": "A máquina de governança comercial do livro A Máquina do Líder: método de vendas, painéis de indicadores, projeção e cenários, vigia semanal, diagnósticos de cliente, decks executivos, revisão final e rotinas agendadas, todos configuráveis por um arquivo da sua empresa.",
+  "author": {
+    "name": "A Escola de Vendas"
+  },
+  "keywords": ["vendas", "governança comercial", "indicadores", "sell in", "sell out", "liderança", "pt-BR"]
+}

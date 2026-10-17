@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Super Skill do Líder</title>
+<meta name="description" content="Baixe e instale a Super Skill do Líder, do livro A Máquina do Líder.">
+<style>
+  :root { --noite: #05070A; --azul: #0C1826; --ouro: #FFC94A; --ouro2: #E0A526; --creme: #F6F0E2; --suave: #D9C9A2; --cinza: #9AA3AE; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: radial-gradient(circle at 50% 0%, rgba(255,199,44,0.20), rgba(0,0,0,0) 55%), linear-gradient(180deg, var(--noite), var(--azul));
+         color: var(--creme); font: 16px/1.55 -apple-system, system-ui, "Avenir Next", sans-serif; min-height: 100vh; }
+  main { max-width: 640px; margin: 0 auto; padding: 40px 16px 56px; }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ouro); }
+  h1 { font-size: 34px; line-height: 1.1; margin: 10px 0 8px; color: #FFF1BC; }
+  .sub { color: var(--suave); margin: 0 0 28px; }
+  .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,201,74,0.28); border-radius: 14px; padding: 18px; margin: 0 0 14px; }
+  .card h2 { font-size: 15px; letter-spacing: .1em; text-transform: uppercase; color: var(--ouro); margin: 0 0 6px; }
+  .card p { margin: 0 0 12px; color: var(--creme); }
+  .botao { display: inline-block; background: linear-gradient(180deg, #FFE7A3, var(--ouro) 55%, var(--ouro2)); color: #1A1003; font-weight: 700;
+           text-decoration: none; padding: 12px 18px; border-radius: 10px; }
+  .cmd { display: flex; gap: 8px; align-items: center; background: #0A1220; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 10px 10px 12px; margin: 8px 0; }
+  .cmd code { flex: 1; font: 13px/1.4 ui-monospace, Menlo, monospace; color: #FFE7A3; overflow-wrap: anywhere; }
+  .cmd button { background: transparent; color: var(--ouro); border: 1px solid rgba(255,201,74,0.5); border-radius: 8px; padding: 6px 10px; font-size: 13px; cursor: pointer; }
+  ol { padding-left: 20px; margin: 0; } li { margin: 4px 0; }
+  ul.skills { list-style: none; padding: 0; margin: 0; }
+  ul.skills li { padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.07); }
+  ul.skills code { display: block; color: #FFE7A3; font: 13px ui-monospace, Menlo, monospace; }
+  ul.skills span { color: var(--suave); font-size: 14px; }
+  .nota { color: var(--cinza); font-size: 13px; }
+  footer { color: var(--cinza); font-size: 12px; margin-top: 28px; }
+</style></head>
+<body><main>
+  <div class="kicker">A Máquina do Líder · versão 0.1.0</div>
+  <h1>Super Skill do Líder</h1>
+  <p class="sub">A máquina de governança comercial do livro, pronta para instalar no Claude. Siga o caminho que combina com você
+  e depois volte à Parte I do livro.</p>
+
+  <section class="card"><h2>No Claude, site ou aplicativo</h2>
+    <p>Planos Pro e Max. Ligue <em>Code execution and file creation</em> em <em>Settings › Capabilities</em>, baixe o arquivo e envie em
+    <em>Customize › Plugins › Add › Upload plugin</em>.</p>
+    <a class="botao" href="https://github.com/aescoladevendas/super-skill-do-lider/releases/latest/download/super-skill-do-lider.zip">Baixar super-skill-do-lider.zip</a></section>
+
+  <section class="card"><h2>No Claude Code</h2>
+    <p>Digite um comando por vez. Para versões novas, use <code>/plugin marketplace update</code>.</p>
+    <div class="cmd"><code>/plugin marketplace add aescoladevendas/super-skill-do-lider</code><button type="button">Copiar</button></div>
+    <div class="cmd"><code>/plugin install super-skill-do-lider@a-maquina-do-lider</code><button type="button">Copiar</button></div></section>
+
+  <section class="card"><h2>Para a equipe inteira</h2>
+    <ol><li>O dono da organização (Team ou Enterprise) baixa o mesmo arquivo.</li>
+    <li>Envia em <em>Organization settings › Plugins &amp; skills › Add › Upload a plugin</em>.</li>
+    <li>Marca o acesso como <em>Installed by default</em>.</li></ol></section>
+
+  <section class="card"><h2>O que vem no pacote</h2><ul class="skills"><li><code>apresentacao-executiva</code><span>Apresentação para diretoria, conselho ou comitê com um slide por ideia, insight que liga dado a decisão e recomendação por bloco. Use em &quot;deck para a diretoria&quot;, &quot;review executivo&quot; ou &quot;QBR&quot;.</span></li><li><code>book-executivo</code><span>Book executivo mensal ou trimestral para a diretoria, 11 slides fixos com KPIs, tabela e recomendações. Use em &quot;atualiza o book do mês&quot;, &quot;monta o book com estes números&quot; ou &quot;mesmo modelo&quot;.</span></li><li><code>diagnostico-de-rede</code><span>Diagnóstico de rede do atendimento direto só com painel de varejo, loja a loja e com plano de ação. Use quando pedirem &quot;diagnóstico da rede X&quot;, &quot;onde cresce e onde cai&quot; ou &quot;abertura por loja&quot;.</span></li><li><code>escola-de-vendas</code><span>Método comercial do livro A Escola de Vendas, do dado ao acordo em dez passos. Use em &quot;por que o cliente caiu&quot;, &quot;essa promoção valeu&quot;, &quot;prepare a negociação&quot; ou num pedido de desconto.</span></li><li><code>identidade-de-clientes</code><span>Cliente se identifica pelo código, nunca pelo nome. Consolida grupos, filiais, migrações de cadastro e operações por UF. Use ao cruzar bases de clientes ou quando um cliente some e outro nasce.</span></li><li><code>padrao-visual</code><span>Padrão visual de todo material novo (fundo cinza, cards brancos, título em dois tons) e gerador de deck em PDF. Use ao pedir &quot;monta o deck&quot;, &quot;PDF para o cliente&quot; ou &quot;material para a diretoria&quot;.</span></li><li><code>painel-de-indicadores</code><span>Painel web Meta × Realizado × Carteira, kit de PDFs por pessoa e rotina de atualização para qualquer indicador. Use em &quot;painel de X&quot;, &quot;dashboard para o time&quot;, &quot;mesma visão para X&quot;.</span></li><li><code>plano-de-negocios-com-cliente</code><span>Deck C-level de diagnóstico e plano conjunto de negócios para conta do atendimento direto. Use quando pedirem &quot;plano de negócios do cliente X&quot;, &quot;JBP da rede&quot; ou &quot;material C-level do cliente&quot;.</span></li><li><code>projecao-e-cenarios</code><span>Melhor estimativa (BE) do mês e do trimestre, com cenários de queda, estabilização e crescimento cliente a cliente. Use em &quot;BE&quot;, &quot;como pousa o trimestre&quot;, &quot;quanto falta para a meta&quot;.</span></li><li><code>revisao-final</code><span>As dez diretrizes de revisão que toda resposta e todo entregável cumprem antes de sair. Use como última etapa de qualquer material e quando o usuário pedir &quot;revisão final&quot; ou &quot;calibrar&quot;.</span></li><li><code>rotina-atualizar-paineis</code><span>Rotina agendada que pega os exports do sistema (realizado e carteira), padroniza as bases, recalcula as planilhas e atualiza os painéis. Use em &quot;subi as bases&quot;, &quot;atualiza os painéis&quot;.</span></li><li><code>rotina-foto-do-painel</code><span>Rotina diária que gera o PDF das abas completas da planilha mestre (painel e carteira) para o grupo do time, sem alterar o original. Use no horário agendado ou quando pedirem &quot;update&quot;.</span></li><li><code>rotina-pdf-do-painel</code><span>Rotina diária e silenciosa que gera o PDF do painel em formato de cartão vertical para celular, com os KPIs gerais do mês. Use no horário agendado ou em &quot;PDF do painel de hoje&quot;.</span></li><li><code>sentinela</code><span>Vigia dos indicadores da governança comercial. Devolve um briefing de decisão em 4 blocos fixos. Use em &quot;rodar o sentinela&quot;, &quot;briefing da semana&quot; ou ao anexar números pedindo leitura.</span></li></ul></section>
+
+  <p class="nota">Antes de ativar, leia as skills, como a Anthropic recomenda para qualquer skill de terceiros. Os plugins oficiais e os
+  conectores que completam a máquina são instalados pelo diretório do Claude, com o seu login.</p>
+  <footer>Anderson Jerônimo · <a href="https://github.com/aescoladevendas/super-skill-do-lider" style="color: var(--ouro)">código no GitHub</a></footer>
+</main>
+<script>
+  document.querySelectorAll('.cmd button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = b.parentNode.querySelector('code').textContent;
+      try { navigator.clipboard.writeText(t).then(function () { b.textContent = 'Copiado'; }); } catch (e) { b.textContent = 'Copie à mão'; }
+    });
+  });
+</script>
+</body></html>

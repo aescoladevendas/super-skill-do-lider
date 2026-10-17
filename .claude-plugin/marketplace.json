@@ -1,0 +1,18 @@
+{
+  "name": "a-maquina-do-lider",
+  "owner": {
+    "name": "A Escola de Vendas"
+  },
+  "metadata": {
+    "description": "Catálogo do livro A Máquina do Líder: o plugin Super Skill do Líder.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "super-skill-do-lider",
+      "source": "./plugins/super-skill-do-lider",
+      "description": "A máquina de governança comercial do livro A Máquina do Líder: método de vendas, painéis de indicadores, projeção e cenários, vigia semanal, diagnósticos de cliente, decks executivos, revisão final e rotinas agendadas, todos configuráveis por um arquivo da sua empresa.",
+      "version": "0.1.0"
+    }
+  ]
+}
